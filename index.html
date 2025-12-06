@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>アイス売上の回帰分析ツール</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Excel 読み込みライブラリ -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+  <header>
+    <h1>アイス売上の回帰分析ツール</h1>
+  </header>
+
+  <main>
+    <!-- ① ファイルアップロード -->
+    <section class="card">
+      <h2>① データファイルをアップロード</h2>
+
+      <input type="file" id="fileInput" accept=".xlsx,.xls">
+      <p class="hint">回帰分析.xlsx をアップロードしてください</p>
+
+      <p id="statusMessage" class="notice">
+        まだ読み込まれていません。
+      </p>
+    </section>
+
+    <!-- ② 相関・回帰 -->
+    <section class="card">
+      <h2>② アイス売上と各項目の相関・回帰</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>説明変数（X）</th>
+            <th>目的変数（Y）</th>
+            <th>相関係数 r</th>
+            <th>決定係数 R²</th>
+            <th>回帰直線</th>
+          </tr>
+        </thead>
+
+        <tbody id="resultBody">
+          <tr><td colspan="5">データを読み込むと表示されます</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ③ 散布図 -->
+    <section class="card">
+      <h2>③ 散布図と回帰直線</h2>
+
+      <label>説明変数を選択：</label>
+      <select id="variableSelect" disabled>
+        <option>（ファイルを読み込んでください）</option>
+      </select>
+
+      <canvas id="scatterChart" height="300"></canvas>
+
+      <div id="regressionInfo"></div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
