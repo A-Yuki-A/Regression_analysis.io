@@ -75,3 +75,26 @@ canvas {
   margin-top: 12px;
   padding: 8px;
 }
+
+/* 予測用のエリア */
+.predict {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.predict input {
+  margin: 4px 8px 4px 4px;
+  padding: 4px;
+  width: 120px;
+}
+
+.predict button {
+  padding: 4px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.output-y {
+  margin-left: 10px;
+  font-weight: bold;
+}
