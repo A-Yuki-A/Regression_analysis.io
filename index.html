@@ -63,7 +63,20 @@
 
       <canvas id="scatterChart" height="300"></canvas>
 
+      <!-- 回帰直線と相関係数の表示 -->
       <div id="regressionInfo"></div>
+
+      <!-- ★ X を入れると Y を予測するエリア -->
+      <div id="predictArea" class="predict">
+        <p>
+          現在選択中の説明変数 <span id="xLabelSpan">(未選択)</span> の
+          値 X を入力すると、回帰直線から予測される Y（アイス売上）を計算します。
+        </p>
+        <label for="inputX">X の値：</label>
+        <input type="number" id="inputX" step="0.1">
+        <button id="calcYBtn">Y を計算</button>
+        <span id="outputY" class="output-y"></span>
+      </div>
     </section>
   </main>
 
