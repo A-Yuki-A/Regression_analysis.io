@@ -4,11 +4,11 @@
 document.querySelectorAll(".tab-button").forEach(btn => {
   btn.addEventListener("click", () => {
 
-    // ボタンの active を切り替え
+    // ボタンの active 切替
     document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
 
-    // タブ内容の active を切り替え
+    // タブ内容の active 切替
     const targetId = btn.dataset.target;
     document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
     document.getElementById(targetId).classList.add("active");
@@ -80,11 +80,18 @@ document.getElementById("calcYBtnIce").addEventListener("click", calcYFromXIce);
 
 
 /**********************
- * アイス売上：Excel読み込み＋形式チェック
+ * アイス売上：Excel読み込み＋ファイル名チェック＋形式チェック
  **********************/
 function loadExcelIce(event) {
   const file = event.target.files[0];
   if (!file) return;
+
+  // ▼ ファイル名チェック
+  const expectedName = "アイス売上分析.xlsx";
+  if (file.name !== expectedName) {
+    alert(`このファイルは使用できません。\n正しいファイル名：${expectedName}`);
+    return;
+  }
 
   const reader = new FileReader();
   reader.onload = function (e) {
@@ -94,32 +101,31 @@ function loadExcelIce(event) {
 
     sheetIce = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
-    // ▼▼ エラー判定 ▼▼
+    // ▼ データ形式チェック ▼
 
-    // 行数不足
     if (sheetIce.length < 2) {
-      alert("このファイルはデータがありません。アイス売上データをアップロードしてください。");
+      alert("このファイルはデータがありません。");
       return;
     }
 
     // C列（売上）が数値か？
     if (typeof sheetIce[1][2] !== "number") {
-      alert("このファイルはアイス売上データではありません。（C列に数値の売上データが必要）");
+      alert("このファイルはアイス売上データ形式ではありません。（C列が数値ではありません）");
       return;
     }
 
-    // D〜F列が数値か？
+    // D〜F列（気温）が数値か？
     for (let i = 1; i < sheetIce.length; i++) {
       const row = sheetIce[i];
       if (typeof row[3] !== "number" ||
           typeof row[4] !== "number" ||
           typeof row[5] !== "number") {
-        alert("このファイルはアイス売上データではありません。（気温データが数値ではありません）");
+        alert("気温データ（D〜F列）が数値ではありません。");
         return;
       }
     }
 
-    // ▲▲ エラー判定ここまで ▲▲
+    // ▼ チェック終了 ▼
 
     document.getElementById("statusMessageIce").textContent =
       "読み込み完了：データ行数 = " + sheetIce.length;
@@ -207,11 +213,11 @@ function setupSelectMenuIce() {
 
 
 /**********************
- * アイス売上：散布図＋回帰直線
+ * アイス売上：散布図 + 回帰直線
  **********************/
 function drawChartIce(colIndex) {
-
   const points = [];
+
   for (let i = 1; i < sheetIce.length; i++) {
     const row = sheetIce[i];
     const xv = Number(row[colIndex]);
@@ -219,7 +225,8 @@ function drawChartIce(colIndex) {
 
     if (!isNaN(xv) && !isNaN(yv)) {
       points.push({
-        x: xv, y: yv,
+        x: xv,
+        y: yv,
         year: row[COL_YEAR],
         month: row[COL_MONTH]
       });
@@ -234,7 +241,6 @@ function drawChartIce(colIndex) {
   const maxX = Math.max(...points.map(p => p.x));
 
   const ctx = document.getElementById("scatterChartIce").getContext("2d");
-
   if (chartIce) chartIce.destroy();
 
   chartIce = new Chart(ctx, {
@@ -249,9 +255,9 @@ function drawChartIce(colIndex) {
         {
           label: "回帰直線",
           type: "line",
-          pointRadius: 0,
           borderColor: "red",
           borderWidth: 2,
+          pointRadius: 0,
           data: [
             { x: minX, y: stat.slope * minX + stat.intercept },
             { x: maxX, y: stat.slope * maxX + stat.intercept }
@@ -263,11 +269,14 @@ function drawChartIce(colIndex) {
       plugins: {
         tooltip: {
           callbacks: {
-            label: ctx => [
-              `${ctx.raw.year}年 ${ctx.raw.month}月`,
-              `X = ${ctx.raw.x}`,
-              `Y = ${ctx.raw.y}`
-            ]
+            label: context => {
+              const p = context.raw;
+              return [
+                `${p.year}年 ${p.month}月`,
+                `X = ${p.x}`,
+                `Y = ${p.y}`
+              ];
+            }
           }
         }
       }
@@ -289,15 +298,13 @@ function drawChartIce(colIndex) {
  **********************/
 function calcYFromXIce() {
   if (!currentStatIce) {
-    document.getElementById("outputYIce").textContent =
-      "説明変数を選択してください。";
+    document.getElementById("outputYIce").textContent = "説明変数を選んでください。";
     return;
   }
 
   const x = Number(document.getElementById("inputXIce").value);
   if (isNaN(x)) {
-    document.getElementById("outputYIce").textContent =
-      "数値を入力してください。";
+    document.getElementById("outputYIce").textContent = "数値を入力してください。";
     return;
   }
 
@@ -342,7 +349,6 @@ function loadExcelJ(event) {
 
     sheetJ = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
-    // データなしチェック
     if (sheetJ.length < 2) {
       alert("このファイルはデータがありません。");
       return;
@@ -424,7 +430,7 @@ function updateJAnalysis() {
 
 
 /**********************
- * Jリーグ：散布図＋回帰直線
+ * Jリーグ：散布図 + 回帰直線
  **********************/
 function drawChartJ(xArray, yArray, stat) {
 
@@ -448,9 +454,9 @@ function drawChartJ(xArray, yArray, stat) {
         {
           label: "回帰直線",
           type: "line",
-          pointRadius: 0,
           borderColor: "red",
           borderWidth: 2,
+          pointRadius: 0,
           data: [
             { x: minX, y: stat.slope * minX + stat.intercept },
             { x: maxX, y: stat.slope * maxX + stat.intercept }
@@ -462,10 +468,13 @@ function drawChartJ(xArray, yArray, stat) {
       plugins: {
         tooltip: {
           callbacks: {
-            label: ctx => [
-              `X = ${ctx.raw.x}`,
-              `Y = ${ctx.raw.y}`
-            ]
+            label: context => {
+              const p = context.raw;
+              return [
+                `X = ${p.x}`,
+                `Y = ${p.y}`
+              ];
+            }
           }
         }
       },
