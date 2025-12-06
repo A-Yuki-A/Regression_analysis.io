@@ -19,130 +19,108 @@
   </header>
 
   <main>
-    <!-- タブボタン -->
-    <div class="tabs">
-      <button class="tab-button active" data-target="tab-ice">アイス売上</button>
-      <button class="tab-button" data-target="tab-jleague">Jリーグ分析</button>
-    </div>
+    <!-- =======================================
+         アイス売上の回帰分析
+         ======================================= -->
+    <section class="card">
+      <h2>【A】アイス売上の回帰分析</h2>
+
+      <!-- ① アイス売上データのアップロード -->
+      <h3>① アイス売上データをアップロード</h3>
+      <input type="file" id="fileInputIce" accept=".xlsx,.xls">
+      <p class="hint">「回帰分析.xlsx」をアップロードしてください（1行目が見出し）。</p>
+      <p id="statusMessageIce" class="notice">まだ読み込まれていません。</p>
+
+      <!-- ② 相関・回帰の一覧 -->
+      <h3>② アイス売上と各項目の相関・回帰</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>説明変数（X）</th>
+            <th>目的変数（Y）</th>
+            <th>相関係数 r</th>
+            <th>決定係数 R²</th>
+            <th>回帰直線</th>
+          </tr>
+        </thead>
+
+        <tbody id="resultBodyIce">
+          <tr><td colspan="5">データを読み込むと表示されます</td></tr>
+        </tbody>
+      </table>
+
+      <!-- ③ 散布図と予測 -->
+      <h3>③ 散布図と回帰直線</h3>
+      <label>説明変数を選択：</label>
+      <select id="variableSelectIce" disabled>
+        <option>（ファイルを読み込んでください）</option>
+      </select>
+
+      <canvas id="scatterChartIce" height="300"></canvas>
+      <div id="regressionInfoIce"></div>
+
+      <div id="predictAreaIce" class="predict">
+        <p>
+          説明変数 <span id="xLabelSpanIce">(未選択)</span> の値 X を入力すると、
+          回帰直線から Y（アイス売上）を計算できます。
+        </p>
+        <label for="inputXIce">X の値：</label>
+        <input type="number" id="inputXIce" step="0.1">
+        <button id="calcYBtnIce">Y を計算</button>
+        <span id="outputYIce" class="output-y"></span>
+      </div>
+    </section>
 
     <!-- =======================================
-         タブ1：アイス売上
+         Jリーグ分析の回帰分析
          ======================================= -->
-    <div id="tab-ice" class="tab-content active">
-      <section class="card">
-        <h2>① アイス売上データをアップロード</h2>
+    <section class="card">
+      <h2>【B】Jリーグ分析の回帰分析</h2>
 
-        <input type="file" id="fileInputIce" accept=".xlsx,.xls">
-        <p class="hint">回帰分析.xlsx をアップロードしてください</p>
+      <!-- ① Jリーグ分析データのアップロード -->
+      <h3>① Jリーグ分析データをアップロード</h3>
+      <input type="file" id="fileInputJ" accept=".xlsx,.xls">
+      <p class="hint">
+        「Jリーグ分析.xlsx」をアップロードしてください。<br>
+        1 行目が列名（見出し）になっていることを想定しています。
+      </p>
+      <p id="statusMessageJ" class="notice">まだ読み込まれていません。</p>
 
-        <p id="statusMessageIce" class="notice">
-          まだ読み込まれていません。
-        </p>
-      </section>
-
-      <section class="card">
-        <h2>② アイス売上と各項目の相関・回帰</h2>
-
-        <table>
-          <thead>
-            <tr>
-              <th>説明変数（X）</th>
-              <th>目的変数（Y）</th>
-              <th>相関係数 r</th>
-              <th>決定係数 R²</th>
-              <th>回帰直線</th>
-            </tr>
-          </thead>
-
-          <tbody id="resultBodyIce">
-            <tr><td colspan="5">データを読み込むと表示されます</td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section class="card">
-        <h2>③ 散布図と回帰直線</h2>
-
-        <label>説明変数を選択：</label>
-        <select id="variableSelectIce" disabled>
-          <option>（ファイルを読み込んでください）</option>
-        </select>
-
-        <canvas id="scatterChartIce" height="300"></canvas>
-
-        <div id="regressionInfoIce"></div>
-
-        <div id="predictAreaIce" class="predict">
-          <p>
-            説明変数 <span id="xLabelSpanIce">(未選択)</span> の値 X を入力すると、回帰直線から Y（アイス売上）を計算できます。
-          </p>
-          <label for="inputXIce">X の値：</label>
-          <input type="number" id="inputXIce" step="0.1">
-          <button id="calcYBtnIce">Y を計算</button>
-          <span id="outputYIce" class="output-y"></span>
+      <!-- ② X・Y の選択と回帰情報 -->
+      <h3>② 説明変数（X）と目的変数（Y）を選択</h3>
+      <div class="xy-select-row">
+        <div>
+          <label for="ySelectJ">Y（目的変数）：</label>
+          <select id="ySelectJ" disabled>
+            <option>（ファイルを読み込んでください）</option>
+          </select>
         </div>
-      </section>
-    </div>
-
-    <!-- =======================================
-         タブ2：Jリーグ分析
-         ======================================= -->
-    <div id="tab-jleague" class="tab-content">
-      <section class="card">
-        <h2>① Jリーグ分析データをアップロード</h2>
-
-        <input type="file" id="fileInputJ" accept=".xlsx,.xls">
-        <p class="hint">
-          Jリーグ分析.xlsx をアップロードしてください。<br>
-          1 行目が列名（見出し）になっていることを想定しています。
-        </p>
-
-        <p id="statusMessageJ" class="notice">
-          まだ読み込まれていません。
-        </p>
-      </section>
-
-      <section class="card">
-        <h2>② 説明変数（X）と目的変数（Y）を選択</h2>
-
-        <div class="xy-select-row">
-          <div>
-            <label for="ySelectJ">Y（目的変数）：</label>
-            <select id="ySelectJ" disabled>
-              <option>（ファイルを読み込んでください）</option>
-            </select>
-          </div>
-          <div>
-            <label for="xSelectJ">X（説明変数）：</label>
-            <select id="xSelectJ" disabled>
-              <option>（ファイルを読み込んでください）</option>
-            </select>
-          </div>
+        <div>
+          <label for="xSelectJ">X（説明変数）：</label>
+          <select id="xSelectJ" disabled>
+            <option>（ファイルを読み込んでください）</option>
+          </select>
         </div>
+      </div>
 
-        <div id="regressionInfoJ"></div>
+      <div id="regressionInfoJ"></div>
 
-        <div id="predictAreaJ" class="predict">
-          <p>
-            説明変数 <span id="xLabelSpanJ">(未選択)</span> の値 X を入力すると、
-            回帰直線から Y（選択した項目）を予測できます。
-          </p>
-          <label for="inputXJ">X の値：</label>
-          <input type="number" id="inputXJ" step="0.1">
-          <button id="calcYBtnJ">Y を計算</button>
-          <span id="outputYJ" class="output-y"></span>
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>③ 散布図と回帰直線</h2>
-
-        <canvas id="scatterChartJ" height="300"></canvas>
-        <p class="hint">
-          X と Y を選ぶと、散布図と回帰直線が表示されます。
+      <div id="predictAreaJ" class="predict">
+        <p>
+          説明変数 <span id="xLabelSpanJ">(未選択)</span> の値 X を入力すると、
+          回帰直線から Y（選択した項目）を予測できます。
         </p>
-      </section>
-    </div>
+        <label for="inputXJ">X の値：</label>
+        <input type="number" id="inputXJ" step="0.1">
+        <button id="calcYBtnJ">Y を計算</button>
+        <span id="outputYJ" class="output-y"></span>
+      </div>
+
+      <!-- ③ 散布図と回帰直線 -->
+      <h3>③ 散布図と回帰直線</h3>
+      <canvas id="scatterChartJ" height="300"></canvas>
+      <p class="hint">X と Y を選ぶと、散布図と回帰直線が表示されます。</p>
+    </section>
   </main>
 
   <script src="script.js"></script>
