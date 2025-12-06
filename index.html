@@ -20,17 +20,13 @@
 
 <main>
 
-  <!-- =========================
-        タブボタン
-  ========================== -->
+  <!-- ▼ タブボタン -->
   <div class="tabs">
     <button class="tab-button active" data-target="tab-ice">アイス売上</button>
     <button class="tab-button" data-target="tab-jleague">Jリーグ分析</button>
   </div>
 
-  <!-- =========================
-        タブ1：アイス売上
-  ========================== -->
+  <!-- ▼ タブ1：アイス売上 -->
   <div id="tab-ice" class="tab-content active">
 
     <section class="card">
@@ -76,11 +72,10 @@
         <span id="outputYIce" class="output-y"></span>
       </div>
     </section>
+
   </div>
 
-  <!-- =========================
-        タブ2：Jリーグ分析
-  ========================== -->
+  <!-- ▼ タブ2：Jリーグ分析 -->
   <div id="tab-jleague" class="tab-content">
 
     <section class="card">
@@ -96,11 +91,15 @@
       <div class="xy-select-row">
         <div>
           <label>Y：</label>
-          <select id="ySelectJ" disabled></select>
+          <select id="ySelectJ" disabled>
+            <option>（ファイルを読み込んでください）</option>
+          </select>
         </div>
         <div>
           <label>X：</label>
-          <select id="xSelectJ" disabled></select>
+          <select id="xSelectJ" disabled>
+            <option>（ファイルを読み込んでください）</option>
+          </select>
         </div>
       </div>
 
@@ -108,7 +107,7 @@
 
       <div class="predict">
         <p>説明変数 <span id="xLabelSpanJ">(未選択)</span> の値 X を入れると Y を予測します。</p>
-        <input type="number" id="inputXJ">
+        <input type="number" id="inputXJ" step="0.1">
         <button id="calcYBtnJ">Y を計算</button>
         <span id="outputYJ" class="output-y"></span>
       </div>
