@@ -2,7 +2,11 @@ let sheetData = null;
 let statsByIndex = {};
 let currentChart = null;
 
-// Excel データ列番号
+// 現在選択されている回帰直線の情報
+let currentStat = null;      // slope, intercept など
+let currentXLabel = "";      // X のラベル
+
+// Excel データ列番号（0 行目が見出し）
 const COL_YEAR = 0;
 const COL_MONTH = 1;
 const COL_SALES = 2;
@@ -19,6 +23,8 @@ const X_CANDIDATES = [
 
 document.getElementById("fileInput").addEventListener("change", loadExcel);
 
+// 「Y を計算」ボタン
+document.getElementById("calcYBtn").addEventListener("click", calcYFromX);
 
 // =============================
 // Excel 読み込み
@@ -36,6 +42,7 @@ function loadExcel(event) {
     const sheet = workbook.SheetNames[0];
     const ws = workbook.Sheets[sheet];
 
+    // 2次元配列として読み込む（header:1）
     sheetData = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
     document.getElementById("statusMessage").textContent =
@@ -172,6 +179,9 @@ function drawChart(colIndex) {
   }
 
   const stat = statsByIndex[colIndex];
+  currentStat = stat;  // 予測用に保存
+  const xLabel = getLabelByIndex(colIndex);
+  currentXLabel = xLabel;
 
   const minX = Math.min(...points.map(p => p.x));
   const maxX = Math.max(...points.map(p => p.x));
@@ -202,11 +212,11 @@ function drawChart(colIndex) {
         }
       ]
     },
-
     options: {
       plugins: {
         tooltip: {
           callbacks: {
+            // マウスを乗せたときの表示（年・月・X・Y）
             label: function(context) {
               const p = context.raw;
               return [
@@ -221,7 +231,46 @@ function drawChart(colIndex) {
     }
   });
 
+  // 回帰直線と相関の表示
   document.getElementById("regressionInfo").innerHTML =
-    `<p>回帰直線：Y = ${stat.slope.toFixed(3)}X + ${stat.intercept.toFixed(3)}</p>
+    `<p>説明変数：${xLabel}</p>
+     <p>回帰直線：Y = ${stat.slope.toFixed(3)}X + ${stat.intercept.toFixed(3)}</p>
      <p>相関係数 r = ${stat.r.toFixed(3)}, 決定係数 R² = ${stat.r2.toFixed(3)}</p>`;
+
+  // 予測エリアのラベル・出力リセット
+  document.getElementById("xLabelSpan").textContent = xLabel;
+  document.getElementById("inputX").value = "";
+  document.getElementById("outputY").textContent = "";
+}
+
+// X のラベル取得用
+function getLabelByIndex(idx) {
+  const found = X_CANDIDATES.find(c => c.index === idx);
+  return found ? found.label : "X";
+}
+
+
+// =============================
+// X から Y を計算
+// =============================
+function calcYFromX() {
+  const output = document.getElementById("outputY");
+
+  if (!currentStat) {
+    output.textContent = " 先に説明変数を選んでください。";
+    return;
+  }
+
+  const xStr = document.getElementById("inputX").value;
+  const x = Number(xStr);
+
+  if (xStr === "" || isNaN(x)) {
+    output.textContent = " 数値を入力してください。";
+    return;
+  }
+
+  const y = currentStat.slope * x + currentStat.intercept;
+
+  output.textContent =
+    `→ 予測 Y（アイス売上） ≒ ${y.toFixed(1)} 個`;
 }
