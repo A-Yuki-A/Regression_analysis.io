@@ -4,11 +4,11 @@
 document.querySelectorAll(".tab-button").forEach(btn => {
   btn.addEventListener("click", () => {
 
-    // ボタン側の active を切り替え
+    // ボタンの active を切り替え
     document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
 
-    // 表示するタブを切り替え
+    // タブ内容の active を切り替え
     const targetId = btn.dataset.target;
     document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
     document.getElementById(targetId).classList.add("active");
@@ -61,7 +61,7 @@ let chartIce = null;
 let currentStatIce = null;
 let currentLabelIce = "";
 
-// Excel の列番号（固定）
+// 列番号
 const COL_YEAR = 0;
 const COL_MONTH = 1;
 const COL_SALES = 2;
@@ -69,21 +69,18 @@ const COL_MEAN_TEMP = 3;
 const COL_MAX_TEMP = 4;
 const COL_MIN_TEMP = 5;
 
-// 対象となる説明変数（X）
 const X_CANDIDATES_ICE = [
   { index: COL_MEAN_TEMP, label: "日平均気温" },
   { index: COL_MAX_TEMP,  label: "最高気温（月平均）" },
   { index: COL_MIN_TEMP,  label: "最低気温（月平均）" }
 ];
 
-
-// イベント登録
 document.getElementById("fileInputIce").addEventListener("change", loadExcelIce);
 document.getElementById("calcYBtnIce").addEventListener("click", calcYFromXIce);
 
 
 /**********************
- * アイス売上：Excel読み込み
+ * アイス売上：Excel読み込み＋形式チェック
  **********************/
 function loadExcelIce(event) {
   const file = event.target.files[0];
@@ -96,6 +93,33 @@ function loadExcelIce(event) {
     const ws = workbook.Sheets[sheetName];
 
     sheetIce = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+    // ▼▼ エラー判定 ▼▼
+
+    // 行数不足
+    if (sheetIce.length < 2) {
+      alert("このファイルはデータがありません。アイス売上データをアップロードしてください。");
+      return;
+    }
+
+    // C列（売上）が数値か？
+    if (typeof sheetIce[1][2] !== "number") {
+      alert("このファイルはアイス売上データではありません。（C列に数値の売上データが必要）");
+      return;
+    }
+
+    // D〜F列が数値か？
+    for (let i = 1; i < sheetIce.length; i++) {
+      const row = sheetIce[i];
+      if (typeof row[3] !== "number" ||
+          typeof row[4] !== "number" ||
+          typeof row[5] !== "number") {
+        alert("このファイルはアイス売上データではありません。（気温データが数値ではありません）");
+        return;
+      }
+    }
+
+    // ▲▲ エラー判定ここまで ▲▲
 
     document.getElementById("statusMessageIce").textContent =
       "読み込み完了：データ行数 = " + sheetIce.length;
@@ -111,7 +135,7 @@ function loadExcelIce(event) {
 
 
 /**********************
- * アイス売上：相関と回帰を計算
+ * 相関・回帰を計算
  **********************/
 function computeAllStatsIce() {
   statsIce = {};
@@ -138,7 +162,7 @@ function computeAllStatsIce() {
 
 
 /**********************
- * アイス売上：表を表示
+ * 相関表の描画
  **********************/
 function renderSummaryTableIce() {
   const tbody = document.getElementById("resultBodyIce");
@@ -163,7 +187,7 @@ function renderSummaryTableIce() {
 
 
 /**********************
- * アイス売上：説明変数のプルダウン
+ * 変数選択メニュー
  **********************/
 function setupSelectMenuIce() {
   const sel = document.getElementById("variableSelectIce");
@@ -186,16 +210,16 @@ function setupSelectMenuIce() {
  * アイス売上：散布図＋回帰直線
  **********************/
 function drawChartIce(colIndex) {
-  const points = [];
 
+  const points = [];
   for (let i = 1; i < sheetIce.length; i++) {
     const row = sheetIce[i];
     const xv = Number(row[colIndex]);
     const yv = Number(row[COL_SALES]);
+
     if (!isNaN(xv) && !isNaN(yv)) {
       points.push({
-        x: xv,
-        y: yv,
+        x: xv, y: yv,
         year: row[COL_YEAR],
         month: row[COL_MONTH]
       });
@@ -210,6 +234,7 @@ function drawChartIce(colIndex) {
   const maxX = Math.max(...points.map(p => p.x));
 
   const ctx = document.getElementById("scatterChartIce").getContext("2d");
+
   if (chartIce) chartIce.destroy();
 
   chartIce = new Chart(ctx, {
@@ -224,9 +249,9 @@ function drawChartIce(colIndex) {
         {
           label: "回帰直線",
           type: "line",
+          pointRadius: 0,
           borderColor: "red",
           borderWidth: 2,
-          pointRadius: 0,
           data: [
             { x: minX, y: stat.slope * minX + stat.intercept },
             { x: maxX, y: stat.slope * maxX + stat.intercept }
@@ -238,14 +263,11 @@ function drawChartIce(colIndex) {
       plugins: {
         tooltip: {
           callbacks: {
-            label: context => {
-              const p = context.raw;
-              return [
-                `${p.year}年 ${p.month}月`,
-                `X = ${p.x}`,
-                `Y（アイス売上） = ${p.y}`
-              ];
-            }
+            label: ctx => [
+              `${ctx.raw.year}年 ${ctx.raw.month}月`,
+              `X = ${ctx.raw.x}`,
+              `Y = ${ctx.raw.y}`
+            ]
           }
         }
       }
@@ -262,19 +284,20 @@ function drawChartIce(colIndex) {
 
 
 
-
 /**********************
- * アイス売上：X を入れて Y を予測
+ * アイス売上：予測機能
  **********************/
 function calcYFromXIce() {
   if (!currentStatIce) {
-    document.getElementById("outputYIce").textContent = "説明変数を選んでください。";
+    document.getElementById("outputYIce").textContent =
+      "説明変数を選択してください。";
     return;
   }
 
   const x = Number(document.getElementById("inputXIce").value);
   if (isNaN(x)) {
-    document.getElementById("outputYIce").textContent = "数値を入力してください。";
+    document.getElementById("outputYIce").textContent =
+      "数値を入力してください。";
     return;
   }
 
@@ -282,6 +305,7 @@ function calcYFromXIce() {
   document.getElementById("outputYIce").textContent =
     `→ 予測 Y（アイス売上） ≒ ${y.toFixed(1)}`;
 }
+
 
 
 
@@ -317,6 +341,13 @@ function loadExcelJ(event) {
     const ws = workbook.Sheets[sheetName];
 
     sheetJ = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+    // データなしチェック
+    if (sheetJ.length < 2) {
+      alert("このファイルはデータがありません。");
+      return;
+    }
+
     headersJ = sheetJ[0];
 
     document.getElementById("statusMessageJ").textContent =
@@ -324,6 +355,7 @@ function loadExcelJ(event) {
 
     setupSelectMenuJ();
   };
+
   reader.readAsBinaryString(file);
 }
 
@@ -361,13 +393,11 @@ function setupSelectMenuJ() {
 
 
 /**********************
- * Jリーグ：回帰分析の更新
+ * Jリーグ：回帰分析更新
  **********************/
 function updateJAnalysis() {
   const yIdx = Number(document.getElementById("ySelectJ").value);
   const xIdx = Number(document.getElementById("xSelectJ").value);
-
-  if (isNaN(yIdx) || isNaN(xIdx)) return;
 
   const x = [];
   const y = [];
@@ -376,6 +406,7 @@ function updateJAnalysis() {
     const row = sheetJ[i];
     const xv = Number(row[xIdx]);
     const yv = Number(row[yIdx]);
+
     if (!isNaN(xv) && !isNaN(yv)) {
       x.push(xv);
       y.push(yv);
@@ -383,8 +414,6 @@ function updateJAnalysis() {
   }
 
   const stat = computeRegression(x, y);
-  if (!stat) return;
-
   currentStatJ = stat;
   currentXLabelJ = headersJ[xIdx];
   currentYLabelJ = headersJ[yIdx];
@@ -398,6 +427,7 @@ function updateJAnalysis() {
  * Jリーグ：散布図＋回帰直線
  **********************/
 function drawChartJ(xArray, yArray, stat) {
+
   const points = xArray.map((v, i) => ({ x: v, y: yArray[i] }));
 
   const minX = Math.min(...xArray);
@@ -418,6 +448,7 @@ function drawChartJ(xArray, yArray, stat) {
         {
           label: "回帰直線",
           type: "line",
+          pointRadius: 0,
           borderColor: "red",
           borderWidth: 2,
           data: [
@@ -431,13 +462,10 @@ function drawChartJ(xArray, yArray, stat) {
       plugins: {
         tooltip: {
           callbacks: {
-            label: context => {
-              const p = context.raw;
-              return [
-                `X = ${p.x}`,
-                `Y = ${p.y}`
-              ];
-            }
+            label: ctx => [
+              `X = ${ctx.raw.x}`,
+              `Y = ${ctx.raw.y}`
+            ]
           }
         }
       },
@@ -449,8 +477,8 @@ function drawChartJ(xArray, yArray, stat) {
   });
 
   document.getElementById("regressionInfoJ").innerHTML =
-    `<p>Y：${currentYLabelJ}</p>
-     <p>X：${currentXLabelJ}</p>
+    `<p>X：${currentXLabelJ}</p>
+     <p>Y：${currentYLabelJ}</p>
      <p>回帰直線：Y = ${stat.slope.toFixed(3)}X + ${stat.intercept.toFixed(3)}</p>
      <p>相関係数 r = ${stat.r.toFixed(3)}, 決定係数 R² = ${stat.r2.toFixed(3)}</p>`;
 
@@ -460,18 +488,19 @@ function drawChartJ(xArray, yArray, stat) {
 
 
 /**********************
- * Jリーグ：X→Y 予測
+ * Jリーグ：予測機能
  **********************/
 function calcYFromXJ() {
   if (!currentStatJ) {
     document.getElementById("outputYJ").textContent =
-      "先に X と Y を選んでください。";
+      "X と Y を選択してください。";
     return;
   }
 
   const x = Number(document.getElementById("inputXJ").value);
   if (isNaN(x)) {
-    document.getElementById("outputYJ").textContent = "数値を入力してください。";
+    document.getElementById("outputYJ").textContent =
+      "数値を入力してください。";
     return;
   }
 
