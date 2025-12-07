@@ -32,7 +32,7 @@
     <section class="card">
       <h2>① アイス売上データをアップロード</h2>
       <input type="file" id="fileInputIce" accept=".xlsx,.xls">
-      <p class="hint">回帰分析.xlsx をアップロードしてください。</p>
+      <p class="hint">必ず「アイス売上分析.xlsx」をアップロードしてください。</p>
       <p id="statusMessageIce" class="notice">まだ読み込まれていません。</p>
     </section>
 
@@ -66,7 +66,7 @@
       <div id="regressionInfoIce"></div>
 
       <div class="predict">
-        <p>説明変数 <span id="xLabelSpanIce">(未選択)</span> の値 X を入れると Y を予測します。</p>
+        <p>説明変数 <span id="xLabelSpanIce">(未選択)</span> の X を入力すると売上 Y を予測します。</p>
         <input type="number" id="inputXIce" step="0.1">
         <button id="calcYBtnIce">Y を計算</button>
         <span id="outputYIce" class="output-y"></span>
@@ -75,13 +75,14 @@
 
   </div>
 
+
   <!-- ▼ タブ2：Jリーグ分析 -->
   <div id="tab-jleague" class="tab-content">
 
     <section class="card">
       <h2>① Jリーグ分析データをアップロード</h2>
       <input type="file" id="fileInputJ" accept=".xlsx,.xls">
-      <p class="hint">Jリーグ分析.xlsx をアップロードしてください。</p>
+      <p class="hint">任意の数値データをアップロード可能です。</p>
       <p id="statusMessageJ" class="notice">まだ読み込まれていません。</p>
     </section>
 
@@ -106,7 +107,7 @@
       <div id="regressionInfoJ"></div>
 
       <div class="predict">
-        <p>説明変数 <span id="xLabelSpanJ">(未選択)</span> の値 X を入れると Y を予測します。</p>
+        <p>説明変数 <span id="xLabelSpanJ">(未選択)</span> の X を入力すると Y を予測します。</p>
         <input type="number" id="inputXJ" step="0.1">
         <button id="calcYBtnJ">Y を計算</button>
         <span id="outputYJ" class="output-y"></span>
@@ -116,7 +117,6 @@
     <section class="card">
       <h2>③ 散布図と回帰直線</h2>
       <canvas id="scatterChartJ" height="300"></canvas>
-      <p class="hint">X と Y を選ぶと散布図が表示されます。</p>
     </section>
 
   </div>
@@ -124,5 +124,6 @@
 </main>
 
 <script src="script.js"></script>
+
 </body>
 </html>
