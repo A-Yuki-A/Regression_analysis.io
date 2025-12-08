@@ -55,7 +55,7 @@ body {
 
 .table-container th {
   background: #f0f0f0;
-  position: sticky;
-  top: 0;          /* ヘッダー行を固定（任意） */
+  position: sticky;   /* ヘッダー固定（いらなければ消してOK） */
+  top: 0;
   z-index: 1;
 }
