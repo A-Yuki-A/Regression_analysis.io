@@ -1,103 +1,129 @@
-// ページが読み込まれたらまとめて設定
-document.addEventListener("DOMContentLoaded", function () {
-  // ===== タブ切り替え処理 =====
-  const buttons = document.querySelectorAll(".tab-button");
-  const contents = document.querySelectorAll(".tab-content");
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>回帰分析ツール</title>
 
-  buttons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const targetId = btn.getAttribute("data-target");
+  <link rel="stylesheet" href="style.css">
 
-      // ボタンの active 切り替え
-      buttons.forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
+  <!-- Excel 読み込みライブラリ -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-      // タブコンテンツの切り替え
-      contents.forEach((c) => {
-        if (c.id === targetId) {
-          c.classList.add("active");
-        } else {
-          c.classList.remove("active");
-        }
-      });
-    });
-  });
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
 
-  // ===== xlsx → テーブル表示関数 =====
-  function displayTableFromSheet(sheetData, targetId) {
-    const container = document.getElementById(targetId);
-    if (!container) return;
+<body>
+<header>
+  <h1>回帰分析ツール</h1>
+</header>
 
-    if (!sheetData || sheetData.length === 0) {
-      container.innerHTML = "<p>シートにデータがありません。</p>";
-      return;
-    }
+<main>
 
-    let html = "<table><thead><tr>";
+  <!-- ▼ タブボタン -->
+  <div class="tabs">
+    <button class="tab-button active" data-target="tab-ice">アイス売上</button>
+    <button class="tab-button" data-target="tab-jleague">Jリーグ分析</button>
+  </div>
 
-    const header = sheetData[0]; // 1行目をヘッダーとする
-    header.forEach((cell) => {
-      html += `<th>${cell !== undefined ? cell : ""}</th>`;
-    });
-    html += "</tr></thead><tbody>";
+  <!-- ▼ タブ1：アイス売上 -->
+  <div id="tab-ice" class="tab-content active">
 
-    // 2行目以降をデータとして扱う
-    for (let i = 1; i < sheetData.length; i++) {
-      const row = sheetData[i];
-      // 完全に空行の場合はスキップ
-      if (!row || row.every((v) => v === undefined || v === "")) continue;
+    <section class="card">
+      <h2>① アイス売上データをアップロード</h2>
+      <input type="file" id="fileInputIce" accept=".xlsx,.xls">
+      <p class="hint">必ず「アイス売上分析.xlsx」をアップロードしてください。</p>
+      <p id="statusMessageIce" class="notice">まだ読み込まれていません。</p>
+    </section>
 
-      html += "<tr>";
-      // ヘッダーの列数に合わせてセルをそろえる
-      header.forEach((_, colIndex) => {
-        const cell = row[colIndex];
-        html += `<td>${cell !== undefined ? cell : ""}</td>`;
-      });
-      html += "</tr>";
-    }
+    <section class="card">
+      <h2>② 相関係数・回帰直線の一覧</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>説明変数（X）</th>
+            <th>目的変数（Y）</th>
+            <th>相関係数 r</th>
+            <th>決定係数 R²</th>
+            <th>回帰直線</th>
+          </tr>
+        </thead>
+        <tbody id="resultBodyIce">
+          <tr><td colspan="5">データを読み込むと自動で表示されます。</td></tr>
+        </tbody>
+      </table>
+    </section>
 
-    html += "</tbody></table>";
-    container.innerHTML = html;
-  }
+    <section class="card">
+      <h2>③ 散布図と回帰直線</h2>
 
-  // ===== xlsx ファイルを読み込んで最初のシートを表示 =====
-  function handleXlsxFile(file, targetId) {
-    if (!file) return;
+      <label>説明変数を選択：</label>
+      <select id="variableSelectIce" disabled>
+        <option>（データを読み込んでください）</option>
+      </select>
 
-    const reader = new FileReader();
+      <canvas id="scatterChartIce" height="300"></canvas>
+      <div id="regressionInfoIce"></div>
 
-    reader.onload = function (e) {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: "array" });
+      <div class="predict">
+        <p>説明変数 <span id="xLabelSpanIce">(未選択)</span> の X を入力すると売上 Y を予測します。</p>
+        <input type="number" id="inputXIce" step="0.1">
+        <button id="calcYBtnIce">Y を計算</button>
+        <span id="outputYIce" class="output-y"></span>
+      </div>
+    </section>
 
-      // 最初のシートを使用
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
+  </div>
 
-      // header:1 で2次元配列として取得
-      const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-      displayTableFromSheet(sheetData, targetId);
-    };
+  <!-- ▼ タブ2：Jリーグ分析 -->
+  <div id="tab-jleague" class="tab-content">
 
-    reader.readAsArrayBuffer(file);
-  }
+    <section class="card">
+      <h2>① Jリーグ分析データをアップロード</h2>
+      <input type="file" id="fileInputJ" accept=".xlsx,.xls">
+      <p class="hint">任意の数値データをアップロード可能です。</p>
+      <p id="statusMessageJ" class="notice">まだ読み込まれていません。</p>
+    </section>
 
-  // ===== 各タブの input にイベントを設定 =====
-  const iceInput = document.getElementById("upload-ice");
-  const jleagueInput = document.getElementById("upload-jleague");
+    <section class="card">
+      <h2>② 説明変数（X）と目的変数（Y）を選択</h2>
 
-  if (iceInput) {
-    iceInput.addEventListener("change", function (e) {
-      const file = e.target.files[0];
-      handleXlsxFile(file, "data-preview-ice");
-    });
-  }
+      <div class="xy-select-row">
+        <div>
+          <label>Y：</label>
+          <select id="ySelectJ" disabled>
+            <option>（ファイルを読み込んでください）</option>
+          </select>
+        </div>
+        <div>
+          <label>X：</label>
+          <select id="xSelectJ" disabled>
+            <option>（ファイルを読み込んでください）</option>
+          </select>
+        </div>
+      </div>
 
-  if (jleagueInput) {
-    jleagueInput.addEventListener("change", function (e) {
-      const file = e.target.files[0];
-      handleXlsxFile(file, "data-preview-jleague");
-    });
-  }
-});
+      <div id="regressionInfoJ"></div>
+
+      <div class="predict">
+        <p>説明変数 <span id="xLabelSpanJ">(未選択)</span> の X を入力すると Y を予測します。</p>
+        <input type="number" id="inputXJ" step="0.1">
+        <button id="calcYBtnJ">Y を計算</button>
+        <span id="outputYJ" class="output-y"></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>③ 散布図と回帰直線</h2>
+      <canvas id="scatterChartJ" height="300"></canvas>
+    </section>
+
+  </div>
+
+</main>
+
+<script src="script.js"></script>
+
+</body>
+</html>
