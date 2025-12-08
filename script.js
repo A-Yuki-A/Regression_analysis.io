@@ -4,11 +4,9 @@
 document.querySelectorAll(".tab-button").forEach(btn => {
   btn.addEventListener("click", () => {
 
-    // ボタンの active 切替
     document.querySelectorAll(".tab-button").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
 
-    // タブ内容の active 切替
     const targetId = btn.dataset.target;
     document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
     document.getElementById(targetId).classList.add("active");
@@ -61,7 +59,7 @@ let chartIce = null;
 let currentStatIce = null;
 let currentLabelIce = "";
 
-// 列番号
+// 列番号（固定）
 const COL_YEAR = 0;
 const COL_MONTH = 1;
 const COL_SALES = 2;
@@ -80,13 +78,13 @@ document.getElementById("calcYBtnIce").addEventListener("click", calcYFromXIce);
 
 
 /**********************
- * アイス売上：Excel読み込み＋ファイル名チェック＋形式チェック
+ * アイス売上：Excel読み込み（ファイル名のみチェック）
  **********************/
 function loadExcelIce(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  // ▼ ファイル名チェック
+  // ▼ ファイル名チェック（これのみ厳格）
   const expectedName = "アイス売上分析.xlsx";
   if (file.name !== expectedName) {
     alert(`このファイルは使用できません。\n正しいファイル名：${expectedName}`);
@@ -101,38 +99,19 @@ function loadExcelIce(event) {
 
     sheetIce = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
-    // ▼ データ形式チェック ▼
-
+    // 行数チェック（最低限）
     if (sheetIce.length < 2) {
-      alert("このファイルはデータがありません。");
+      alert("このファイルにはデータがありません。");
       return;
     }
 
-    // C列（売上）が数値か？
-    if (typeof sheetIce[1][2] !== "number") {
-      alert("このファイルはアイス売上データ形式ではありません。（C列が数値ではありません）");
-      return;
-    }
-
-    // D〜F列（気温）が数値か？
-    for (let i = 1; i < sheetIce.length; i++) {
-      const row = sheetIce[i];
-      if (typeof row[3] !== "number" ||
-          typeof row[4] !== "number" ||
-          typeof row[5] !== "number") {
-        alert("気温データ（D〜F列）が数値ではありません。");
-        return;
-      }
-    }
-
-    // ▼ チェック終了 ▼
-
+    // ▼ 型チェックは行わない（日本語Excelで型が文字扱いになるため）
     document.getElementById("statusMessageIce").textContent =
       "読み込み完了：データ行数 = " + sheetIce.length;
 
     computeAllStatsIce();
     renderSummaryTableIce();
-    setupSelectMenuIce();
+    setupSelectMenuIce();  // ←これで説明変数選択が動く
   };
 
   reader.readAsBinaryString(file);
@@ -141,7 +120,7 @@ function loadExcelIce(event) {
 
 
 /**********************
- * 相関・回帰を計算
+ * アイス売上：相関・回帰計算
  **********************/
 function computeAllStatsIce() {
   statsIce = {};
@@ -168,7 +147,7 @@ function computeAllStatsIce() {
 
 
 /**********************
- * 相関表の描画
+ * アイス売上：相関表表示
  **********************/
 function renderSummaryTableIce() {
   const tbody = document.getElementById("resultBodyIce");
@@ -193,7 +172,7 @@ function renderSummaryTableIce() {
 
 
 /**********************
- * 変数選択メニュー
+ * アイス売上：説明変数選択メニュー
  **********************/
 function setupSelectMenuIce() {
   const sel = document.getElementById("variableSelectIce");
@@ -213,7 +192,7 @@ function setupSelectMenuIce() {
 
 
 /**********************
- * アイス売上：散布図 + 回帰直線
+ * アイス売上：散布図＋回帰直線
  **********************/
 function drawChartIce(colIndex) {
   const points = [];
@@ -222,7 +201,6 @@ function drawChartIce(colIndex) {
     const row = sheetIce[i];
     const xv = Number(row[colIndex]);
     const yv = Number(row[COL_SALES]);
-
     if (!isNaN(xv) && !isNaN(yv)) {
       points.push({
         x: xv,
@@ -399,7 +377,7 @@ function setupSelectMenuJ() {
 
 
 /**********************
- * Jリーグ：回帰分析更新
+ * Jリーグ：回帰分析実行
  **********************/
 function updateJAnalysis() {
   const yIdx = Number(document.getElementById("ySelectJ").value);
@@ -430,7 +408,7 @@ function updateJAnalysis() {
 
 
 /**********************
- * Jリーグ：散布図 + 回帰直線
+ * Jリーグ：散布図＋回帰直線
  **********************/
 function drawChartJ(xArray, yArray, stat) {
 
