@@ -1,129 +1,51 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <title>回帰分析ツール</title>
+function loadExcelIce(event) {
+  const file = event.target.files[0];
+  if (!file) return;
 
-  <link rel="stylesheet" href="style.css">
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const workbook = XLSX.read(e.target.result, { type: "binary" });
+    const sheetName = workbook.SheetNames[0];
+    const ws = workbook.Sheets[sheetName];
 
-  <!-- Excel 読み込みライブラリ -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    sheetIce = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
+    // ▼ ここからエラー判定追加 ▼
 
-<body>
-<header>
-  <h1>回帰分析ツール</h1>
-</header>
+    // 行数チェック
+    if (sheetIce.length < 2) {
+      alert("このファイルはデータがありません。アイス売上データをアップロードしてください。");
+      return;
+    }
 
-<main>
+    const header = sheetIce[0];
 
-  <!-- ▼ タブボタン -->
-  <div class="tabs">
-    <button class="tab-button active" data-target="tab-ice">アイス売上</button>
-    <button class="tab-button" data-target="tab-jleague">Jリーグ分析</button>
-  </div>
+    // C列（売上）チェック
+    if (typeof sheetIce[1][2] !== "number") {
+      alert("このファイルはアイス売上データではありません。（C列に数値の売上データが必要です）");
+      return;
+    }
 
-  <!-- ▼ タブ1：アイス売上 -->
-  <div id="tab-ice" class="tab-content active">
+    // D〜F列が数値かどうかチェック
+    for (let i = 1; i < sheetIce.length; i++) {
+      const row = sheetIce[i];
+      const d = row[3], e2 = row[4], f = row[5];
 
-    <section class="card">
-      <h2>① アイス売上データをアップロード</h2>
-      <input type="file" id="fileInputIce" accept=".xlsx,.xls">
-      <p class="hint">必ず「アイス売上分析.xlsx」をアップロードしてください。</p>
-      <p id="statusMessageIce" class="notice">まだ読み込まれていません。</p>
-    </section>
+      if (typeof d !== "number" || typeof e2 !== "number" || typeof f !== "number") {
+        alert("このファイルはアイス売上データではありません。（気温データが数値ではありません）");
+        return;
+      }
+    }
 
-    <section class="card">
-      <h2>② 相関係数・回帰直線の一覧</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>説明変数（X）</th>
-            <th>目的変数（Y）</th>
-            <th>相関係数 r</th>
-            <th>決定係数 R²</th>
-            <th>回帰直線</th>
-          </tr>
-        </thead>
-        <tbody id="resultBodyIce">
-          <tr><td colspan="5">データを読み込むと自動で表示されます。</td></tr>
-        </tbody>
-      </table>
-    </section>
+    // ▼ ここまでエラー判定 ▼
 
-    <section class="card">
-      <h2>③ 散布図と回帰直線</h2>
+    document.getElementById("statusMessageIce").textContent =
+      "読み込み完了：データ行数 = " + sheetIce.length;
 
-      <label>説明変数を選択：</label>
-      <select id="variableSelectIce" disabled>
-        <option>（データを読み込んでください）</option>
-      </select>
+    computeAllStatsIce();
+    renderSummaryTableIce();
+    setupSelectMenuIce();
+  };
 
-      <canvas id="scatterChartIce" height="300"></canvas>
-      <div id="regressionInfoIce"></div>
-
-      <div class="predict">
-        <p>説明変数 <span id="xLabelSpanIce">(未選択)</span> の X を入力すると売上 Y を予測します。</p>
-        <input type="number" id="inputXIce" step="0.1">
-        <button id="calcYBtnIce">Y を計算</button>
-        <span id="outputYIce" class="output-y"></span>
-      </div>
-    </section>
-
-  </div>
-
-
-  <!-- ▼ タブ2：Jリーグ分析 -->
-  <div id="tab-jleague" class="tab-content">
-
-    <section class="card">
-      <h2>① Jリーグ分析データをアップロード</h2>
-      <input type="file" id="fileInputJ" accept=".xlsx,.xls">
-      <p class="hint">任意の数値データをアップロード可能です。</p>
-      <p id="statusMessageJ" class="notice">まだ読み込まれていません。</p>
-    </section>
-
-    <section class="card">
-      <h2>② 説明変数（X）と目的変数（Y）を選択</h2>
-
-      <div class="xy-select-row">
-        <div>
-          <label>Y：</label>
-          <select id="ySelectJ" disabled>
-            <option>（ファイルを読み込んでください）</option>
-          </select>
-        </div>
-        <div>
-          <label>X：</label>
-          <select id="xSelectJ" disabled>
-            <option>（ファイルを読み込んでください）</option>
-          </select>
-        </div>
-      </div>
-
-      <div id="regressionInfoJ"></div>
-
-      <div class="predict">
-        <p>説明変数 <span id="xLabelSpanJ">(未選択)</span> の X を入力すると Y を予測します。</p>
-        <input type="number" id="inputXJ" step="0.1">
-        <button id="calcYBtnJ">Y を計算</button>
-        <span id="outputYJ" class="output-y"></span>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>③ 散布図と回帰直線</h2>
-      <canvas id="scatterChartJ" height="300"></canvas>
-    </section>
-
-  </div>
-
-</main>
-
-<script src="script.js"></script>
-
-</body>
-</html>
+  reader.readAsBinaryString(file);
+}
