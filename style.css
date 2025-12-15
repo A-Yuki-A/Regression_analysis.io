@@ -168,3 +168,20 @@ canvas {
   padding: 6px;
   font-size: 14px;
 }
+/* ============================
+   サンプルダウンロードボタン
+============================ */
+.download-btn {
+  display: inline-block;
+  padding: 10px 14px;
+  font-size: 14px;
+  background: #2563eb;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: 0.2s;
+}
+
+.download-btn:hover {
+  background: #1d4ed8;
+}
